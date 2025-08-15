@@ -89,6 +89,7 @@ func setupRoutes(r *gin.Engine) {
 			loans.PUT("/:id/approve", approveLoan)
 			loans.PUT("/:id/invest", investLoan)
 			loans.PUT("/:id/disburse", disburseLoan)
+			loans.GET("/:id/transitions", getLoanTransitions)
 		}
 	}
 } 
