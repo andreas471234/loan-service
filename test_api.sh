@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Test script for Loan Service API with FSM
+# Test script for Loan Service API with FSM and State Rules
 BASE_URL="http://localhost:8080"
 
-echo "=== Loan Service API Test with FSM ==="
+echo "=== Loan Service API Test with FSM and State Rules ==="
 echo
 
 # Test health endpoint
@@ -50,9 +50,14 @@ curl -s "$BASE_URL/api/v1/loans/$LOAN_ID" | python3 -m json.tool
 echo
 echo
 
-# Test approving the loan
-echo "6. Approving the loan..."
-curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/approve" | python3 -m json.tool
+# Test approving the loan with required details
+echo "6. Approving the loan with field validator details..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/approve" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "field_validator_proof": "https://example.com/proofs/field_visit_123.jpg",
+    "field_validator_id": "validator_001"
+  }' | python3 -m json.tool
 echo
 echo
 
@@ -62,38 +67,59 @@ curl -s "$BASE_URL/api/v1/loans/$LOAN_ID/transitions" | python3 -m json.tool
 echo
 echo
 
-# Test investing in the loan
-echo "8. Investing in the loan..."
-curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/invest" | python3 -m json.tool
+# Test adding first investment
+echo "8. Adding first investment (15,000)..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/invest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "investor_id": "investor_001",
+    "amount": 15000.00
+  }' | python3 -m json.tool
+echo
+echo
+
+# Test adding second investment to complete the loan
+echo "9. Adding second investment (10,000) to complete the loan..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/invest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "investor_id": "investor_002",
+    "amount": 10000.00
+  }' | python3 -m json.tool
 echo
 echo
 
 # Test getting valid transitions for invested loan
-echo "9. Getting valid transitions for invested loan..."
+echo "10. Getting valid transitions for invested loan..."
 curl -s "$BASE_URL/api/v1/loans/$LOAN_ID/transitions" | python3 -m json.tool
 echo
 echo
 
-# Test disbursing the loan
-echo "10. Disbursing the loan..."
-curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/disburse" | python3 -m json.tool
+# Test disbursing the loan with required details
+echo "11. Disbursing the loan with field officer details..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/disburse" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "signed_agreement_link": "https://example.com/agreements/signed_agreement_123.pdf",
+    "field_officer_id": "officer_001"
+  }' | python3 -m json.tool
 echo
 echo
 
 # Test getting valid transitions for disbursed loan
-echo "11. Getting valid transitions for disbursed loan..."
+echo "12. Getting valid transitions for disbursed loan..."
 curl -s "$BASE_URL/api/v1/loans/$LOAN_ID/transitions" | python3 -m json.tool
 echo
 echo
 
 # Test getting loans by status
-echo "12. Getting loans by status (disbursed)..."
+echo "13. Getting loans by status (disbursed)..."
 curl -s "$BASE_URL/api/v1/loans/?status=disbursed" | python3 -m json.tool
 echo
 echo
 
 # Test creating another loan
-echo "13. Creating another loan..."
+echo "14. Creating another loan..."
 CREATE_RESPONSE2=$(curl -s -X POST "$BASE_URL/api/v1/loans/" \
   -H "Content-Type: application/json" \
   -d '{
@@ -113,7 +139,7 @@ echo "Created second loan ID: $LOAN_ID2"
 echo
 
 # Test updating the second loan
-echo "14. Updating the second loan..."
+echo "15. Updating the second loan..."
 curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID2" \
   -H "Content-Type: application/json" \
   -d '{
@@ -126,15 +152,42 @@ echo
 echo
 
 # Test getting loans by borrower ID
-echo "15. Getting loans by borrower ID (user123)..."
+echo "16. Getting loans by borrower ID (user123)..."
 curl -s "$BASE_URL/api/v1/loans/?borrower_id=user123" | python3 -m json.tool
 echo
 echo
 
 # Test invalid state transition (trying to approve a disbursed loan)
-echo "16. Testing invalid state transition (trying to approve a disbursed loan)..."
-curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/approve" | python3 -m json.tool
+echo "17. Testing invalid state transition (trying to approve a disbursed loan)..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID/approve" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "field_validator_proof": "https://example.com/proofs/field_visit_456.jpg",
+    "field_validator_id": "validator_002"
+  }' | python3 -m json.tool
 echo
 echo
 
-echo "=== FSM Test completed ==="
+# Test invalid investment (trying to invest more than principal)
+echo "18. Testing invalid investment (trying to invest more than principal)..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID2/invest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "investor_id": "investor_003",
+    "amount": 20000.00
+  }' | python3 -m json.tool
+echo
+echo
+
+# Test invalid disbursement (trying to disburse without full investment)
+echo "19. Testing invalid disbursement (trying to disburse without full investment)..."
+curl -s -X PUT "$BASE_URL/api/v1/loans/$LOAN_ID2/disburse" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "signed_agreement_link": "https://example.com/agreements/signed_agreement_456.pdf",
+    "field_officer_id": "officer_002"
+  }' | python3 -m json.tool
+echo
+echo
+
+echo "=== FSM and State Rules Test completed ==="
