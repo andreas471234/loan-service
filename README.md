@@ -1,11 +1,12 @@
-# Loan Service API
+# Loan Service API with FSM
 
-A comprehensive REST API service for managing the full lifecycle of loans, from proposal to disbursement. Supports multiple loan states including Proposed, Approved, Invested, and Disbursed, with business rules and workflows to ensure accurate state transitions and data integrity.
+A comprehensive REST API service for managing the full lifecycle of loans, from proposal to disbursement. Uses a Finite State Machine (FSM) for robust state management with forward-only state transitions and business rules to ensure accurate loan progression and data integrity.
 
 ## Features
 
 - **Loan Lifecycle Management**: Complete workflow from proposal to disbursement
-- **State Transitions**: Enforced business rules for loan status changes
+- **Finite State Machine (FSM)**: Robust state management with explicit transitions
+- **Forward-Only State Transitions**: Enforced business rules for loan status changes (no rollback)
 - **RESTful API**: Clean, intuitive API design
 - **Database Integration**: SQLite database with GORM ORM
 - **Validation**: Request validation and error handling
@@ -18,6 +19,7 @@ A comprehensive REST API service for managing the full lifecycle of loans, from 
 - **GORM**: Object-relational mapping
 - **SQLite**: Lightweight database
 - **UUID**: Unique identifier generation
+- **FSM**: Finite State Machine for state management
 
 ## Quick Start
 
@@ -68,11 +70,10 @@ The API will be available at `http://localhost:8080`
 ```json
 {
   "borrower_id": "string",
-  "amount": 10000.00,
-  "interest_rate": 5.5,
-  "term": 12,
-  "purpose": "Home improvement",
-  "description": "Optional description"
+  "principal_amount": 10000.00,
+  "rate": 5.5,
+  "roi": 7.0,
+  "agreement_letter_link": "https://example.com/agreement.pdf"
 }
 ```
 
@@ -81,18 +82,36 @@ The API will be available at `http://localhost:8080`
 - Request Body (all fields optional):
 ```json
 {
-  "amount": 15000.00,
-  "interest_rate": 6.0,
-  "term": 24,
-  "purpose": "Business expansion",
-  "description": "Updated description"
+  "principal_amount": 15000.00,
+  "rate": 6.0,
+  "roi": 8.0,
+  "agreement_letter_link": "https://example.com/updated-agreement.pdf"
 }
 ```
 
 #### Delete Loan
 - `DELETE /api/v1/loans/{id}` - Delete a loan (only in proposed status)
 
-### Loan State Transitions
+### Loan State Transitions (FSM)
+
+#### Get Valid Transitions
+- `GET /api/v1/loans/{id}/transitions` - Get valid state transitions for a loan
+- Response:
+```json
+{
+  "message": "Valid transitions retrieved successfully",
+  "data": {
+    "current_state": "proposed",
+    "transitions": [
+      {
+        "from": "proposed",
+        "to": "approved",
+        "action": "approve"
+      }
+    ]
+  }
+}
+```
 
 #### Approve Loan
 - `PUT /api/v1/loans/{id}/approve` - Approve a proposed loan
@@ -109,14 +128,59 @@ The API will be available at `http://localhost:8080`
 2. **Approved** - Loan has been approved for funding
 3. **Invested** - Funds have been invested in the loan
 4. **Disbursed** - Loan amount has been disbursed to borrower
-5. **Rejected** - Loan has been rejected (not implemented in current version)
 
-## State Transition Rules
+## FSM State Transition Rules
 
+The Finite State Machine enforces the following transitions:
+
+- **Proposed** → **Approved** (via "approve" action)
+- **Approved** → **Invested** (via "invest" action)
+- **Invested** → **Disbursed** (via "disburse" action)
+
+### Business Rules
+
+- Loans can only move forward in the lifecycle (no rollback allowed)
 - Only loans in **Proposed** status can be updated or deleted
 - Only loans in **Proposed** status can be approved
 - Only loans in **Approved** status can be invested
 - Only loans in **Invested** status can be disbursed
+
+## Loan Model Fields
+
+The loan model contains only the essential information:
+
+- **borrower_id**: Unique identifier for the borrower
+- **principal_amount**: The loan amount requested
+- **rate**: Interest rate that the borrower will pay
+- **roi**: Return on investment for investors
+- **agreement_letter_link**: Link to the generated agreement letter
+- **status**: Current state of the loan
+- **created_at**: Timestamp when loan was created
+- **updated_at**: Timestamp when loan was last updated
+
+## FSM Implementation
+
+The service uses a Finite State Machine to manage loan states:
+
+```go
+type FSM struct {
+    CurrentState LoanStatus
+    Transitions  []StateTransition
+}
+
+type StateTransition struct {
+    From   LoanStatus
+    To     LoanStatus
+    Action string
+}
+```
+
+### FSM Methods
+
+- `CanTransition(to LoanStatus) bool` - Check if transition is valid
+- `Transition(to LoanStatus) error` - Perform state transition
+- `GetCurrentState() LoanStatus` - Get current state
+- `GetValidTransitions() []StateTransition` - Get valid transitions from current state
 
 ## Response Format
 
@@ -157,8 +221,8 @@ The application uses SQLite as the database. The database file (`loan_service.db
 ```
 loan-service/
 ├── main.go          # Application entry point
-├── models.go        # Data models and types
-├── handlers.go      # HTTP request handlers
+├── models.go        # Data models, FSM types and interfaces
+├── handlers.go      # HTTP request handlers with FSM logic
 ├── go.mod           # Go module file
 ├── go.sum           # Go module checksums
 └── README.md        # This file
@@ -182,12 +246,16 @@ curl -X POST http://localhost:8080/api/v1/loans \
   -H "Content-Type: application/json" \
   -d '{
     "borrower_id": "user123",
-    "amount": 25000.00,
-    "interest_rate": 4.5,
-    "term": 36,
-    "purpose": "Vehicle purchase",
-    "description": "New car loan"
+    "principal_amount": 25000.00,
+    "rate": 4.5,
+    "roi": 6.0,
+    "agreement_letter_link": "https://example.com/agreement/user123.pdf"
   }'
+```
+
+### Get Valid Transitions
+```bash
+curl http://localhost:8080/api/v1/loans/{loan-id}/transitions
 ```
 
 ### Get All Loans
@@ -198,6 +266,12 @@ curl http://localhost:8080/api/v1/loans
 ### Approve a Loan
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve
+```
+
+### Test the API with FSM
+```bash
+chmod +x test_api.sh
+./test_api.sh
 ```
 
 ## License

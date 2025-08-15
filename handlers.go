@@ -10,21 +10,21 @@ import (
 // getLoans retrieves all loans with optional filtering
 func getLoans(c *gin.Context) {
 	var loans []Loan
-	
+
 	// Get query parameters for filtering
 	status := c.Query("status")
 	borrowerID := c.Query("borrower_id")
-	
+
 	query := db
-	
+
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-	
+
 	if borrowerID != "" {
 		query = query.Where("borrower_id = ?", borrowerID)
 	}
-	
+
 	if err := query.Find(&loans).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -32,24 +32,13 @@ func getLoans(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Convert to response format
 	var responses []LoanResponse
 	for _, loan := range loans {
-		responses = append(responses, LoanResponse{
-			ID:           loan.ID,
-			BorrowerID:   loan.BorrowerID,
-			Amount:       loan.Amount,
-			InterestRate: loan.InterestRate,
-			Term:         loan.Term,
-			Purpose:      loan.Purpose,
-			Status:       loan.Status,
-			Description:  loan.Description,
-			CreatedAt:    loan.CreatedAt,
-			UpdatedAt:    loan.UpdatedAt,
-		})
+		responses = append(responses, loanToResponse(loan))
 	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loans retrieved successfully",
 		Data:    responses,
@@ -59,7 +48,7 @@ func getLoans(c *gin.Context) {
 // getLoan retrieves a specific loan by ID
 func getLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -75,23 +64,10 @@ func getLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan retrieved successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
 }
 
@@ -105,17 +81,16 @@ func createLoan(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	loan := Loan{
-		BorrowerID:   req.BorrowerID,
-		Amount:       req.Amount,
-		InterestRate: req.InterestRate,
-		Term:         req.Term,
-		Purpose:      req.Purpose,
-		Description:  req.Description,
-		Status:       StatusProposed,
+		BorrowerID:        req.BorrowerID,
+		PrincipalAmount:   req.PrincipalAmount,
+		Rate:              req.Rate,
+		ROI:               req.ROI,
+		AgreementLetterLink: req.AgreementLetterLink,
+		Status:            StatusProposed,
 	}
-	
+
 	if err := db.Create(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -123,30 +98,17 @@ func createLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusCreated, SuccessResponse{
 		Message: "Loan created successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
 }
 
 // updateLoan updates an existing loan
 func updateLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var req UpdateLoanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
@@ -155,7 +117,7 @@ func updateLoan(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -171,33 +133,30 @@ func updateLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	// Only allow updates if loan is in proposed status
-	if loan.Status != StatusProposed {
+
+	// Check if loan can be updated using FSM
+	if !loan.CanUpdate() {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "Invalid operation",
 			Message: "Can only update loans in proposed status",
 		})
 		return
 	}
-	
+
 	// Update fields if provided
-	if req.Amount != nil {
-		loan.Amount = *req.Amount
+	if req.PrincipalAmount != nil {
+		loan.PrincipalAmount = *req.PrincipalAmount
 	}
-	if req.InterestRate != nil {
-		loan.InterestRate = *req.InterestRate
+	if req.Rate != nil {
+		loan.Rate = *req.Rate
 	}
-	if req.Term != nil {
-		loan.Term = *req.Term
+	if req.ROI != nil {
+		loan.ROI = *req.ROI
 	}
-	if req.Purpose != nil {
-		loan.Purpose = *req.Purpose
+	if req.AgreementLetterLink != nil {
+		loan.AgreementLetterLink = *req.AgreementLetterLink
 	}
-	if req.Description != nil {
-		loan.Description = *req.Description
-	}
-	
+
 	if err := db.Save(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -205,30 +164,17 @@ func updateLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan updated successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
 }
 
 // deleteLoan deletes a loan
 func deleteLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -244,16 +190,16 @@ func deleteLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	// Only allow deletion if loan is in proposed status
-	if loan.Status != StatusProposed {
+
+	// Check if loan can be deleted using FSM
+	if !loan.CanDelete() {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "Invalid operation",
 			Message: "Can only delete loans in proposed status",
 		})
 		return
 	}
-	
+
 	if err := db.Delete(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -261,16 +207,16 @@ func deleteLoan(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan deleted successfully",
 	})
 }
 
-// approveLoan approves a loan
+// approveLoan approves a loan using FSM
 func approveLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -286,17 +232,19 @@ func approveLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	// Only allow approval if loan is in proposed status
-	if loan.Status != StatusProposed {
+
+	// Use FSM to perform state transition
+	fsm := loan.GetFSM()
+	if err := fsm.Transition(StatusApproved); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "Invalid operation",
 			Message: "Can only approve loans in proposed status",
 		})
 		return
 	}
-	
-	loan.Status = StatusApproved
+
+	// Update loan status
+	loan.Status = fsm.GetCurrentState()
 	if err := db.Save(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -304,30 +252,17 @@ func approveLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan approved successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
 }
 
-// investLoan marks a loan as invested
+// investLoan marks a loan as invested using FSM
 func investLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -343,17 +278,19 @@ func investLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	// Only allow investment if loan is in approved status
-	if loan.Status != StatusApproved {
+
+	// Use FSM to perform state transition
+	fsm := loan.GetFSM()
+	if err := fsm.Transition(StatusInvested); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "Invalid operation",
 			Message: "Can only invest in approved loans",
 		})
 		return
 	}
-	
-	loan.Status = StatusInvested
+
+	// Update loan status
+	loan.Status = fsm.GetCurrentState()
 	if err := db.Save(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -361,30 +298,17 @@ func investLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan marked as invested successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
 }
 
-// disburseLoan disburses a loan
+// disburseLoan disburses a loan using FSM
 func disburseLoan(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var loan Loan
 	if err := db.First(&loan, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -400,17 +324,19 @@ func disburseLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	// Only allow disbursement if loan is in invested status
-	if loan.Status != StatusInvested {
+
+	// Use FSM to perform state transition
+	fsm := loan.GetFSM()
+	if err := fsm.Transition(StatusDisbursed); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "Invalid operation",
 			Message: "Can only disburse invested loans",
 		})
 		return
 	}
-	
-	loan.Status = StatusDisbursed
+
+	// Update loan status
+	loan.Status = fsm.GetCurrentState()
 	if err := db.Save(&loan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "Database error",
@@ -418,22 +344,56 @@ func disburseLoan(c *gin.Context) {
 		})
 		return
 	}
-	
-	response := LoanResponse{
-		ID:           loan.ID,
-		BorrowerID:   loan.BorrowerID,
-		Amount:       loan.Amount,
-		InterestRate: loan.InterestRate,
-		Term:         loan.Term,
-		Purpose:      loan.Purpose,
-		Status:       loan.Status,
-		Description:  loan.Description,
-		CreatedAt:    loan.CreatedAt,
-		UpdatedAt:    loan.UpdatedAt,
-	}
-	
+
 	c.JSON(http.StatusOK, SuccessResponse{
 		Message: "Loan disbursed successfully",
-		Data:    response,
+		Data:    loanToResponse(loan),
 	})
-} 
+}
+
+// getLoanTransitions returns valid transitions for a loan
+func getLoanTransitions(c *gin.Context) {
+	id := c.Param("id")
+
+	var loan Loan
+	if err := db.First(&loan, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error:   "Not found",
+				Message: "Loan not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "Database error",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	fsm := loan.GetFSM()
+	validTransitions := fsm.GetValidTransitions()
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "Valid transitions retrieved successfully",
+		Data: gin.H{
+			"current_state": fsm.GetCurrentState(),
+			"transitions":   validTransitions,
+		},
+	})
+}
+
+// loanToResponse converts a Loan to LoanResponse
+func loanToResponse(loan Loan) LoanResponse {
+	return LoanResponse{
+		ID:                loan.ID,
+		BorrowerID:        loan.BorrowerID,
+		PrincipalAmount:   loan.PrincipalAmount,
+		Rate:              loan.Rate,
+		ROI:               loan.ROI,
+		AgreementLetterLink: loan.AgreementLetterLink,
+		Status:            loan.Status,
+		CreatedAt:         loan.CreatedAt,
+		UpdatedAt:         loan.UpdatedAt,
+	}
+}
