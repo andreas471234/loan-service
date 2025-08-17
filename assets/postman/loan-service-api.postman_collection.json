@@ -1,0 +1,635 @@
+{
+	"info": {
+		"_postman_id": "loan-service-api-collection",
+		"name": "Loan Service API",
+		"description": "Complete API collection for the Loan Service microservice. This collection includes all endpoints for loan management, state transitions, and business operations.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "loan-service-api"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Check the health status of the loan service"
+			},
+			"response": []
+		},
+		{
+			"name": "Loan Management",
+			"item": [
+				{
+					"name": "Get All Loans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								""
+							]
+						},
+						"description": "Retrieve all loans with optional filtering"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}"
+							]
+						},
+						"description": "Retrieve a specific loan by its ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Loan",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"borrower_id\": \"borrower_123\",\n  \"principal_amount\": 10000.00,\n  \"rate\": 5.0,\n  \"roi\": 7.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								""
+							]
+						},
+						"description": "Create a new loan application"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"principal_amount\": 12000.00,\n  \"rate\": 6.0,\n  \"roi\": 8.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}"
+							]
+						},
+						"description": "Update an existing loan's details"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Loan",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}"
+							]
+						},
+						"description": "Delete a loan (soft delete)"
+					},
+					"response": []
+				}
+			],
+			"description": "Basic CRUD operations for loan management"
+		},
+		{
+			"name": "Loan State Transitions",
+			"item": [
+				{
+					"name": "Approve Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"field_validator_proof\": \"https://example.com/images/validation_proof.jpg\",\n  \"field_validator_id\": \"validator_456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"approve"
+							]
+						},
+						"description": "Approve a loan with field validation proof. The approval date is automatically recorded by the system."
+					},
+					"response": []
+				},
+				{
+					"name": "Invest in Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"investor_id\": \"investor_789\",\n  \"amount\": 5000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/invest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"invest"
+							]
+						},
+						"description": "Invest in a loan. When the loan becomes fully invested, the agreement letter link is automatically generated by the system."
+					},
+					"response": []
+				},
+				{
+					"name": "Disburse Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"signed_agreement_link\": \"https://example.com/documents/signed_agreement.pdf\",\n  \"field_officer_id\": \"officer_101\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/disburse",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"disburse"
+							]
+						},
+						"description": "Disburse a fully invested loan with signed agreement"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan Transitions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/transitions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"transitions"
+							]
+						},
+						"description": "Get available state transitions for a loan"
+					},
+					"response": []
+				}
+			],
+			"description": "Loan state transition operations (approve, invest, disburse)"
+		},
+		{
+			"name": "Complete Loan Lifecycle",
+			"item": [
+				{
+					"name": "1. Create Loan",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"borrower_id\": \"borrower_lifecycle_001\",\n  \"principal_amount\": 15000.00,\n  \"rate\": 5.5,\n  \"roi\": 7.5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								""
+							]
+						},
+						"description": "Step 1: Create a new loan application"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('loan_id', response.data.id);",
+									"    console.log('Loan created with ID:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "2. Approve Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"field_validator_proof\": \"https://example.com/images/field_validation_proof.jpg\",\n  \"field_validator_id\": \"validator_lifecycle_001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"approve"
+							]
+						},
+						"description": "Step 2: Approve the loan with field validation proof"
+					},
+					"response": []
+				},
+				{
+					"name": "3. Invest in Loan (First Investment)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"investor_id\": \"investor_lifecycle_001\",\n  \"amount\": 7500.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/invest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"invest"
+							]
+						},
+						"description": "Step 3a: First investment (50% of loan amount)"
+					},
+					"response": []
+				},
+				{
+					"name": "4. Invest in Loan (Second Investment)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"investor_id\": \"investor_lifecycle_002\",\n  \"amount\": 7500.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/invest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"invest"
+							]
+						},
+						"description": "Step 3b: Second investment (remaining 50% to fully invest the loan)"
+					},
+					"response": []
+				},
+				{
+					"name": "5. Disburse Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"signed_agreement_link\": \"https://example.com/documents/signed_agreement_lifecycle.pdf\",\n  \"field_officer_id\": \"officer_lifecycle_001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/disburse",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"disburse"
+							]
+						},
+						"description": "Step 4: Disburse the fully invested loan"
+					},
+					"response": []
+				},
+				{
+					"name": "6. Verify Final State",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}"
+							]
+						},
+						"description": "Step 5: Verify the loan is in disbursed state with all details"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete end-to-end loan lifecycle demonstration"
+		},
+		{
+			"name": "Validation Examples",
+			"item": [
+				{
+					"name": "Create Loan - Missing Required Fields",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"principal_amount\": 10000.00,\n  \"rate\": 5.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								""
+							]
+						},
+						"description": "Example of validation error - missing borrower_id and roi"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Loan - Invalid Amount",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"borrower_id\": \"borrower_123\",\n  \"principal_amount\": -1000.00,\n  \"rate\": 5.0,\n  \"roi\": 7.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								""
+							]
+						},
+						"description": "Example of validation error - negative principal amount"
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Loan - Invalid Image Link",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"field_validator_proof\": \"invalid-link\",\n  \"field_validator_id\": \"validator_456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"approve"
+							]
+						},
+						"description": "Example of validation error - invalid image link format"
+					},
+					"response": []
+				},
+				{
+					"name": "Invest in Loan - Exceeding Amount",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"investor_id\": \"investor_789\",\n  \"amount\": 20000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/loans/{{loan_id}}/invest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"invest"
+							]
+						},
+						"description": "Example of business rule validation - investment amount exceeds principal"
+					},
+					"response": []
+				}
+			],
+			"description": "Examples of validation errors and business rule violations"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "loan_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

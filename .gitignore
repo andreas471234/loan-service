@@ -12,6 +12,7 @@ server
 # Output of the go coverage tool
 *.out
 coverage.html
+tools/coverage.*
 
 # Database files
 *.db

@@ -51,9 +51,9 @@ test:
 # Run tests with coverage
 coverage:
 	@echo "Running tests with coverage..."
-	$(GOTEST) -v -coverprofile=coverage.out ./...
-	$(GOCMD) tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+	$(GOTEST) -v -coverprofile=tools/coverage.out ./...
+	$(GOCMD) tool cover -html=tools/coverage.out -o tools/coverage.html
+	@echo "Coverage report generated: tools/coverage.html"
 
 # Run the application
 run:
@@ -87,7 +87,7 @@ check: fmt lint test
 # Docker build
 docker-build:
 	@echo "Building Docker image..."
-	docker build -t $(BINARY_NAME) .
+	docker build -t $(BINARY_NAME) -f deployments/Dockerfile .
 
 # Docker run
 docker-run:
@@ -97,12 +97,12 @@ docker-run:
 # Docker compose up
 docker-up:
 	@echo "Starting services with Docker Compose..."
-	docker-compose up -d
+	docker-compose -f deployments/docker-compose.yml up -d
 
 # Docker compose down
 docker-down:
 	@echo "Stopping services with Docker Compose..."
-	docker-compose down
+	docker-compose -f deployments/docker-compose.yml down
 
 # Generate API documentation (if using swagger)
 docs:
