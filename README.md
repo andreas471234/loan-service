@@ -1,49 +1,98 @@
-# Loan Service API with FSM
+# Loan Service API
 
-A comprehensive REST API service for managing the full lifecycle of loans, from proposal to disbursement. Uses a Finite State Machine (FSM) for robust state management with forward-only state transitions and business rules to ensure accurate loan progression and data integrity.
+A modern, production-ready REST API service for managing the complete lifecycle of loans, from initial proposal to final disbursement. Built with Go, this service implements a robust Finite State Machine (FSM) for reliable state management and enforces strict business rules to ensure data integrity and accurate loan progression.
 
 ## Features
 
-- **Loan Lifecycle Management**: Complete workflow from proposal to disbursement
-- **Finite State Machine (FSM)**: Robust state management with explicit transitions
-- **Forward-Only State Transitions**: Enforced business rules for loan status changes (no rollback)
-- **RESTful API**: Clean, intuitive API design with comprehensive validation
-- **Database Integration**: SQLite database with GORM ORM (PostgreSQL support available)
-- **Validation**: Request validation with custom image link validation
-- **CORS Support**: Cross-origin resource sharing enabled
-- **Clean Architecture**: Well-structured codebase following Go best practices
-- **Auto-Generation**: Automatic agreement letter links and approval dates
-- **Comprehensive Testing**: Unit tests, integration tests, and end-to-end validation
+### Core Loan Management
+- **Complete Loan Lifecycle**: End-to-end loan processing from proposal to disbursement
+- **Finite State Machine (FSM)**: Robust state management with explicit, forward-only transitions
+- **Multi-Investor Support**: Multiple investors can contribute to a single loan
+- **Automatic State Transitions**: Smart progression based on business rules
+- **Investment Tracking**: Real-time tracking of total investments and individual contributions
+
+### Advanced Validation & Security
+- **Custom Image Link Validation**: Validates field validator proof images with support for multiple formats
+- **Comprehensive Input Validation**: All API endpoints with strict data validation
+- **Business Rule Enforcement**: Strict state transition and investment limit validation
+- **Data Integrity Protection**: Prevents invalid operations and maintains audit trails
+
+### Auto-Generation Features
+- **Smart Agreement Letter Links**: Automatically generated when loans become fully invested
+- **Automatic Date Recording**: Approval and disbursement dates automatically captured
+- **UUID Generation**: Secure, unique identifiers for all entities
+- **Audit Trail**: Complete tracking of all loan activities and state changes
+
+### API & Integration
+- **RESTful API Design**: Clean, intuitive API with comprehensive documentation
+- **CORS Support**: Cross-origin resource sharing for web applications
+- **Request/Response Logging**: Detailed logging for debugging and monitoring
+- **Error Recovery**: Graceful error handling with meaningful error messages
+- **Health Check Endpoint**: Service health monitoring
+
+### Database & Storage
+- **Multi-Database Support**: SQLite for development, PostgreSQL for production
+- **GORM Integration**: Powerful ORM with automatic migrations
+- **Soft Deletes**: Safe deletion with data preservation
+- **Optimized Queries**: Efficient database operations with proper indexing
+
+### Testing & Quality Assurance
+- **Comprehensive Test Suite**: 10 test files with extensive coverage
+- **Unit Testing**: Individual component testing
+- **Integration Testing**: End-to-end API testing
+- **Test Utilities**: Reusable test helpers and utilities
+
+### Development & Operations
+- **Docker Support**: Containerized deployment with Docker and Docker Compose
+- **Makefile Automation**: Streamlined development workflow
+- **Code Formatting**: Automatic code formatting with `go fmt`
+- **Linting**: Code quality checks with `go vet`
+- **Race Detection**: Concurrency testing for thread safety
 
 ## Tech Stack
 
-- **Go 1.21+**: Core programming language
-- **Gin**: HTTP web framework
-- **GORM**: Object-relational mapping
-- **SQLite**: Lightweight database (default)
-- **PostgreSQL**: Production-ready database (configurable)
-- **UUID**: Unique identifier generation
-- **FSM**: Finite State Machine for state management
-- **Validator**: Custom validation with go-playground/validator
+### Backend Framework
+- **Go 1.21+**: High-performance, concurrent programming language
+- **Gin**: Fast HTTP web framework with middleware support
+- **GORM**: Feature-rich ORM for database operations
+
+### Database
+- **SQLite**: Lightweight, file-based database (development)
+- **PostgreSQL**: Production-ready relational database (configurable)
+
+### Validation & Security
+- **go-playground/validator**: Powerful validation library
+- **Custom Validators**: Image link validation and business rule enforcement
+- **UUID**: Secure unique identifier generation
+
+### Testing & Quality
+- **Go Testing**: Built-in testing framework
+- **Test Coverage**: Comprehensive coverage reporting
+- **Integration Tests**: End-to-end API validation
+
+### DevOps & Deployment
+- **Docker**: Containerization for consistent deployment
+- **Docker Compose**: Multi-service orchestration
+- **Make**: Build automation and task management
 
 ## Project Structure
 
 ```
 loan-service/
-├── api/                    # API versioning
-│   └── v1/                # API v1 routes
+├── api/                    # API versioning and routing
+│   └── v1/                # API v1 routes and handlers
 ├── cmd/                    # Application entry points
 │   └── server/            # Main server application
 ├── internal/               # Private application code
 │   ├── config/            # Configuration management
 │   ├── database/          # Database connection and setup
-│   ├── domain/            # Business logic and models
+│   ├── domain/            # Business entities and logic
 │   ├── dto/               # Data Transfer Objects
 │   ├── handler/           # HTTP request handlers
-│   ├── middleware/        # HTTP middleware
+│   ├── middleware/        # HTTP middleware (CORS, logging, recovery)
 │   ├── repository/        # Data access layer
 │   ├── service/           # Business logic layer
-│   └── testutils/         # Test utilities
+│   └── testutils/         # Test utilities and helpers
 ├── tests/                 # Test files
 │   └── integration/       # Integration tests
 ├── docker-compose.yml     # Docker Compose configuration
@@ -51,8 +100,7 @@ loan-service/
 ├── Makefile               # Build and development tasks
 ├── go.mod                 # Go module file
 ├── go.sum                 # Go module checksums
-├── env.example            # Environment variables example
-├── test_api.sh            # API testing script
+├── env.example            # Environment variables template
 ├── E2E_TEST_CASES.md      # Integration test documentation
 └── README.md              # This file
 ```
@@ -60,34 +108,30 @@ loan-service/
 ## Quick Start
 
 ### Prerequisites
-
 - Go 1.21 or higher
 - Git
+- Docker (optional, for containerized deployment)
 
 ### Installation
 
-1. Clone the repository:
-
+1. **Clone the repository**
 ```bash
 git clone <repository-url>
 cd loan-service
 ```
 
-2. Install dependencies:
-
+2. **Install dependencies**
 ```bash
 make deps
 ```
 
-3. Set up environment variables:
-
+3. **Set up environment**
 ```bash
 cp env.example .env
 # Edit .env file with your configuration
 ```
 
-4. Run the application:
-
+4. **Run the application**
 ```bash
 make run
 ```
@@ -96,71 +140,62 @@ The API will be available at `http://localhost:8080`
 
 ## Development Commands
 
+### Build & Run
 ```bash
-# Build the application
-make build
+make build          # Build the application
+make run            # Run the application
+make run-race       # Run with race detection
+```
 
-# Run all tests
-make test
+### Testing
+```bash
+make test           # Run all tests
+make test-unit      # Run unit tests only
+make test-integration # Run integration tests only
+make coverage       # Run tests with coverage report
+```
 
-# Run unit tests only
-make test-unit
+### Code Quality
+```bash
+make fmt            # Format code
+make lint           # Run linter
+make check          # Run format, lint, and test
+```
 
-# Run integration tests only
-make test-integration
+### Docker
+```bash
+make docker-build   # Build Docker image
+make docker-run     # Run Docker container
+make docker-up      # Start with Docker Compose
+make docker-down    # Stop Docker Compose services
+```
 
-# Run tests with coverage
-make coverage
-
-# Format code
-make fmt
-
-# Run linter
-make lint
-
-# Run all checks (format, lint, test)
-make check
-
-# Clean build artifacts
-make clean
-
-# Run with race detection
-make run-race
-
-# Docker commands
-make docker-build
-make docker-run
-make docker-up
-make docker-down
-
-# Show all available commands
-make help
+### Utilities
+```bash
+make clean          # Clean build artifacts
+make deps           # Install dependencies
+make help           # Show all available commands
 ```
 
 ## API Endpoints
 
 ### Health Check
-
 - `GET /health` - Service health status
 
 ### Loan Management
 
 #### Get All Loans
-
 - `GET /api/v1/loans` - Retrieve all loans
-- Query Parameters:
+- **Query Parameters**:
   - `status` (optional): Filter by loan status
   - `borrower_id` (optional): Filter by borrower ID
 
 #### Get Single Loan
-
 - `GET /api/v1/loans/{id}` - Retrieve a specific loan by ID
 
 #### Create Loan
-
 - `POST /api/v1/loans` - Create a new loan
-- Request Body:
-
+- **Request Body**:
 ```json
 {
   "borrower_id": "string",
@@ -171,10 +206,8 @@ make help
 ```
 
 #### Update Loan
-
 - `PUT /api/v1/loans/{id}` - Update an existing loan (only in proposed status)
-- Request Body (all fields optional):
-
+- **Request Body** (all fields optional):
 ```json
 {
   "principal_amount": 15000.00,
@@ -185,16 +218,13 @@ make help
 ```
 
 #### Delete Loan
-
 - `DELETE /api/v1/loans/{id}` - Delete a loan (only in proposed status)
 
 ### Loan State Transitions (FSM)
 
 #### Get Valid Transitions
-
 - `GET /api/v1/loans/{id}/transitions` - Get valid state transitions for a loan
-- Response:
-
+- **Response**:
 ```json
 {
   "message": "Valid transitions retrieved successfully",
@@ -212,38 +242,30 @@ make help
 ```
 
 #### Approve Loan
-
 - `PUT /api/v1/loans/{id}/approve` - Approve a proposed loan
-- Request Body:
-
+- **Request Body**:
 ```json
 {
   "field_validator_proof": "https://example.com/proof.jpg",
   "field_validator_id": "validator123"
 }
 ```
-
-**Note**: `field_validator_proof` must be a valid image link (supports .jpg, .jpeg, .png, .gif, .bmp, .webp, .svg)
+- **Note**: `field_validator_proof` must be a valid image link (supports .jpg, .jpeg, .png, .gif, .bmp, .webp, .svg)
 
 #### Invest in Loan
-
 - `PUT /api/v1/loans/{id}/invest` - Add investment to an approved loan
-- Request Body:
-
+- **Request Body**:
 ```json
 {
   "investor_id": "investor123",
   "amount": 5000.00
 }
 ```
-
-**Note**: Agreement letter link is automatically generated when loan becomes fully invested
+- **Note**: Agreement letter link is automatically generated when loan becomes fully invested
 
 #### Disburse Loan
-
 - `PUT /api/v1/loans/{id}/disburse` - Disburse a fully invested loan
-- Request Body:
-
+- **Request Body**:
 ```json
 {
   "signed_agreement_link": "https://example.com/signed-agreement.pdf",
@@ -251,23 +273,20 @@ make help
 }
 ```
 
-## Loan States
+## Loan States & Workflow
 
-1. **Proposed** - Initial state when loan is created
-2. **Approved** - Loan has been approved for funding
-3. **Invested** - Funds have been invested in the loan
-4. **Disbursed** - Loan amount has been disbursed to borrower
+### State Progression
+1. **Proposed** → Initial state when loan is created
+2. **Approved** → Loan has been approved for funding
+3. **Invested** → Funds have been invested in the loan
+4. **Disbursed** → Loan amount has been disbursed to borrower
 
-## FSM State Transition Rules
-
-The Finite State Machine enforces the following transitions:
-
+### FSM State Transition Rules
 - **Proposed** → **Approved** (via "approve" action)
 - **Approved** → **Invested** (via "invest" action)
 - **Invested** → **Disbursed** (via "disburse" action)
 
 ### Business Rules
-
 - Loans can only move forward in the lifecycle (no rollback allowed)
 - Only loans in **Proposed** status can be updated or deleted
 - Only loans in **Proposed** status can be approved
@@ -276,24 +295,33 @@ The Finite State Machine enforces the following transitions:
 - Loans automatically transition to **Invested** when fully funded
 - Agreement letter links are auto-generated when loans become fully invested
 - Approval dates are automatically recorded when loans are approved
+- Multiple investors can contribute to the same loan
+- Total investment cannot exceed loan principal amount
 
 ## Architecture
 
-The application follows Clean Architecture principles:
+The application follows Clean Architecture principles with clear separation of concerns:
 
-- **Domain Layer** (`internal/domain/`): Business entities and logic
-- **Repository Layer** (`internal/repository/`): Data access abstraction
-- **Service Layer** (`internal/service/`): Business logic orchestration
-- **Handler Layer** (`internal/handler/`): HTTP request handling
+### Layer Structure
+- **Domain Layer** (`internal/domain/`): Business entities, logic, and FSM implementation
+- **Repository Layer** (`internal/repository/`): Data access abstraction and database operations
+- **Service Layer** (`internal/service/`): Business logic orchestration and validation
+- **Handler Layer** (`internal/handler/`): HTTP request handling and response formatting
 - **DTO Layer** (`internal/dto/`): Data transfer objects for API contracts
 - **Middleware Layer** (`internal/middleware/`): HTTP middleware (CORS, logging, recovery)
-- **Config Layer** (`internal/config/`): Configuration management
+- **Config Layer** (`internal/config/`): Configuration management and environment handling
 - **Database Layer** (`internal/database/`): Database connection and setup
+
+### Key Components
+- **27 Go source files** with comprehensive functionality
+- **10 test files** ensuring code quality and reliability
+- **Custom validation** with image link validation
+- **Middleware stack** for logging, CORS, and error recovery
+- **FSM implementation** for robust state management
 
 ## Response Format
 
 ### Success Response
-
 ```json
 {
   "message": "Operation completed successfully",
@@ -304,7 +332,6 @@ The application follows Clean Architecture principles:
 ```
 
 ### Error Response
-
 ```json
 {
   "error": "Error type",
@@ -312,7 +339,7 @@ The application follows Clean Architecture principles:
 }
 ```
 
-## Environment Variables
+## Environment Configuration
 
 Copy `env.example` to `.env` and configure:
 
@@ -342,65 +369,49 @@ DB_NAME=loan_service.db
 
 ## Database
 
-The application uses SQLite as the default database. The database file will be created automatically when you first run the application. PostgreSQL is also supported and can be configured by updating the environment variables.
+The application uses SQLite as the default database for development. The database file is created automatically on first run. PostgreSQL is supported for production deployments and can be configured by updating the environment variables.
+
+### Features
+- **Automatic Migration**: Database schema created automatically
+- **Soft Deletes**: Safe deletion with data preservation
+- **Audit Fields**: Created, updated, and deleted timestamps
+- **Foreign Key Relationships**: Proper data integrity constraints
 
 ## Testing
 
-### Run All Tests
+### Test Coverage
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: End-to-end API validation
+- **Test Utilities**: Reusable test helpers
 
+### Running Tests
 ```bash
-make test
-```
-
-### Run Unit Tests Only
-
-```bash
-make test-unit
-```
-
-### Run Integration Tests Only
-
-```bash
-make test-integration
-```
-
-### Run Tests with Coverage
-
-```bash
-make coverage
-```
-
-### API Testing
-
-```bash
-chmod +x test_api.sh
-./test_api.sh
+make test              # Run all tests
+make test-unit         # Run unit tests only
+make test-integration  # Run integration tests only
+make coverage          # Generate coverage report
 ```
 
 ### Test Documentation
-
 See `E2E_TEST_CASES.md` for comprehensive integration test documentation.
 
-## Docker
+## Docker Deployment
 
-### Build and Run with Docker
-
+### Build and Run
 ```bash
-make docker-build
-make docker-run
+make docker-build      # Build Docker image
+make docker-run        # Run Docker container
 ```
 
-### Using Docker Compose
-
+### Docker Compose
 ```bash
-make docker-up
-make docker-down
+make docker-up         # Start services
+make docker-down       # Stop services
 ```
 
 ## Example Usage
 
 ### Create a Loan
-
 ```bash
 curl -X POST http://localhost:8080/api/v1/loans \
   -H "Content-Type: application/json" \
@@ -413,19 +424,16 @@ curl -X POST http://localhost:8080/api/v1/loans \
 ```
 
 ### Get Valid Transitions
-
 ```bash
 curl http://localhost:8080/api/v1/loans/{loan-id}/transitions
 ```
 
 ### Get All Loans
-
 ```bash
 curl http://localhost:8080/api/v1/loans
 ```
 
 ### Approve a Loan
-
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
   -H "Content-Type: application/json" \
@@ -436,7 +444,6 @@ curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
 ```
 
 ### Invest in a Loan
-
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/invest \
   -H "Content-Type: application/json" \
@@ -447,7 +454,6 @@ curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/invest \
 ```
 
 ### Disburse a Loan
-
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/disburse \
   -H "Content-Type: application/json" \
@@ -457,23 +463,31 @@ curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/disburse \
   }'
 ```
 
-## Recent Enhancements
+## Key Features Summary
 
-### Auto-Generation Features
-- **Agreement Letter Links**: Automatically generated when loans become fully invested
-- **Approval Dates**: Automatically recorded when loans are approved
-- **Disbursement Dates**: Automatically tracked when loans are disbursed
+### Core Functionality
+- Complete loan lifecycle management
+- Multi-investor support with partial investments
+- Automatic state transitions and business rule enforcement
+- Comprehensive validation and error handling
 
-### Enhanced Validation
-- **Image Link Validation**: Custom validation for field validator proof images
-- **Comprehensive Input Validation**: All required fields and data formats
-- **Business Rule Enforcement**: Strict state transition and investment limit validation
+### Advanced Features
+- Custom image link validation for field validator proofs
+- Auto-generation of agreement letter links
+- Automatic date recording for approvals and disbursements
+- Robust FSM implementation with forward-only transitions
 
-### Improved Test Structure
-- **Logical Test Organization**: Clear separation of concerns
-- **Comprehensive Coverage**: All aspects of the loan lifecycle
-- **Clear Test Documentation**: Descriptive test names and logging
-- **Robust Error Handling**: Proper validation of error scenarios
+### Developer Experience
+- Comprehensive test suite with 10 test files
+- Docker support for easy deployment
+- Makefile automation for common tasks
+- Detailed API documentation and examples
+
+### Production Ready
+- CORS support for web applications
+- Request logging and error recovery
+- Multi-database support (SQLite/PostgreSQL)
+- Health check endpoint for monitoring
 
 ## License
 

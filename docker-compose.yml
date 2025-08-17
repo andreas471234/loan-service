@@ -8,8 +8,9 @@ services:
     environment:
       - PORT=8080
       - GIN_MODE=release
+      - DB_NAME=/app/data/loan_service.db
     volumes:
-      - ./loan_service.db:/app/loan_service.db
+      - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]

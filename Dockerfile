@@ -1,5 +1,8 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.21 AS builder
+
+# Install build dependencies for CGO
+RUN apt-get update && apt-get install -y gcc libc6-dev sqlite3 libsqlite3-dev
 
 # Set working directory
 WORKDIR /app
@@ -14,17 +17,16 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o loan-service .
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o loan-service ./cmd/server
 
 # Final stage
-FROM alpine:latest
+FROM debian:bookworm-slim
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y ca-certificates sqlite3 && rm -rf /var/lib/apt/lists/*
 
 # Create app user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 # Set working directory
 WORKDIR /app
