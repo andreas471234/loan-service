@@ -239,7 +239,7 @@ func (h *LoanHandler) InvestLoan(c *gin.Context) {
 		return
 	}
 
-	loan, err := h.loanService.InvestInLoan(id, req.InvestorID, req.Amount, req.AgreementLetterLink)
+	loan, err := h.loanService.InvestInLoan(id, req.InvestorID, req.Amount)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error:   "Investment error",

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 
 	"loan-service/internal/domain"
+	"loan-service/internal/dto"
 	"loan-service/internal/handler"
 	"loan-service/internal/middleware"
 	"loan-service/internal/repository"
@@ -51,6 +52,9 @@ func SetupTestRouter() *gin.Engine {
 func SetupTestServer() *TestSetup {
 	// Set Gin to test mode
 	gin.SetMode(gin.TestMode)
+
+	// Register custom validations
+	dto.RegisterCustomValidations()
 
 	// Create test database
 	testDB := SetupTestDB()

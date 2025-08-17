@@ -371,7 +371,7 @@ func TestInvestInLoan(t *testing.T) {
 	require.NoError(t, err)
 	
 	// Invest in the loan
-	investedLoan, err := service.InvestInLoan(loan.ID, "investor_001", 10000.00, "https://example.com/agreement/user123.pdf")
+	investedLoan, err := service.InvestInLoan(loan.ID, "investor_001", 10000.00)
 	require.NoError(t, err)
 	
 	assert.Equal(t, 10000.00, investedLoan.TotalInvested)
@@ -383,7 +383,7 @@ func TestInvestInLoan(t *testing.T) {
 func TestInvestInLoanNotFound(t *testing.T) {
 	service, _ := setupTestService()
 	
-	_, err := service.InvestInLoan("nonexistent-id", "investor_001", 10000.00, "https://example.com/agreement/user123.pdf")
+	_, err := service.InvestInLoan("nonexistent-id", "investor_001", 10000.00)
 	assert.Error(t, err)
 }
 
@@ -402,7 +402,7 @@ func TestInvestInLoanInvalidState(t *testing.T) {
 	require.NoError(t, err)
 	
 	// Try to invest in unapproved loan (should fail)
-	_, err = service.InvestInLoan(loan.ID, "investor_001", 10000.00, "https://example.com/agreement/user123.pdf")
+	_, err = service.InvestInLoan(loan.ID, "investor_001", 10000.00)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "loan is not in approved status")
 }
@@ -430,7 +430,7 @@ func TestInvestInLoanExceedsLimit(t *testing.T) {
 	require.NoError(t, err)
 	
 	// Try to invest more than principal amount (should fail)
-	_, err = service.InvestInLoan(loan.ID, "investor_001", 30000.00, "https://example.com/agreement/user123.pdf")
+	_, err = service.InvestInLoan(loan.ID, "investor_001", 30000.00)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "total investment amount would exceed loan principal")
 }
@@ -457,7 +457,7 @@ func TestDisburseLoan(t *testing.T) {
 	_, err = service.ApproveLoan(loan.ID, approvalDetails)
 	require.NoError(t, err)
 	
-	_, err = service.InvestInLoan(loan.ID, "investor_001", 25000.00, "https://example.com/agreement/user123.pdf")
+	_, err = service.InvestInLoan(loan.ID, "investor_001", 25000.00)
 	require.NoError(t, err)
 	
 	// Disburse the loan
@@ -510,7 +510,7 @@ func TestDisburseLoanNotFullyInvested(t *testing.T) {
 	require.NoError(t, err)
 	
 	// Invest partially
-	_, err = service.InvestInLoan(loan.ID, "investor_001", 10000.00, "https://example.com/agreement/user123.pdf")
+	_, err = service.InvestInLoan(loan.ID, "investor_001", 10000.00)
 	require.NoError(t, err)
 	
 	// Try to disburse partially invested loan (should fail)
@@ -552,4 +552,38 @@ func TestGetLoanTransitionsNotFound(t *testing.T) {
 	
 	_, err := service.GetLoanTransitions("nonexistent-id")
 	assert.Error(t, err)
+}
+
+func TestInvestInLoanAutoGeneratesAgreementLink(t *testing.T) {
+	service, _ := setupTestService()
+
+	// Create and approve a loan
+	loan := &domain.Loan{
+		BorrowerID:      "user123",
+		PrincipalAmount: 10000.00,
+		Rate:            4.5,
+		ROI:             6.0,
+	}
+
+	err := service.CreateLoan(loan)
+	require.NoError(t, err)
+
+	approvalDetails := &domain.ApprovalDetails{
+		FieldValidatorProof: "proof",
+		FieldValidatorID:    "validator_001",
+	}
+
+	_, err = service.ApproveLoan(loan.ID, approvalDetails)
+	require.NoError(t, err)
+
+	// Invest fully in the loan (should auto-generate agreement letter link)
+	investedLoan, err := service.InvestInLoan(loan.ID, "investor_001", 10000.00)
+	require.NoError(t, err)
+
+	// Verify the loan is now invested and has auto-generated agreement letter link
+	assert.Equal(t, domain.StatusInvested, investedLoan.Status)
+	assert.Equal(t, 10000.00, investedLoan.TotalInvested)
+	assert.NotEmpty(t, investedLoan.AgreementLetterLink)
+	assert.Contains(t, investedLoan.AgreementLetterLink, "https://example.com/agreements/loan_")
+	assert.Contains(t, investedLoan.AgreementLetterLink, "_agreement.pdf")
 }

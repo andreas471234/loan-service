@@ -14,6 +14,7 @@ import (
 	"loan-service/internal/config"
 	"loan-service/internal/database"
 	"loan-service/internal/domain"
+	"loan-service/internal/dto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -47,6 +48,9 @@ func main() {
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	// Register custom validations
+	dto.RegisterCustomValidations()
 
 	// Create router
 	router := gin.New()

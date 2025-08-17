@@ -18,15 +18,14 @@ type UpdateLoanRequest struct {
 
 // ApproveLoanRequest represents the request body for approving a loan
 type ApproveLoanRequest struct {
-	FieldValidatorProof string `json:"field_validator_proof" binding:"required"`
+	FieldValidatorProof string `json:"field_validator_proof" binding:"required,image_link"`
 	FieldValidatorID    string `json:"field_validator_id" binding:"required"`
 }
 
 // InvestLoanRequest represents the request body for investing in a loan
 type InvestLoanRequest struct {
-	InvestorID          string  `json:"investor_id" binding:"required"`
-	Amount              float64 `json:"amount" binding:"required,gt=0"`
-	AgreementLetterLink string  `json:"agreement_letter_link"`
+	InvestorID string  `json:"investor_id" binding:"required"`
+	Amount     float64 `json:"amount" binding:"required,gt=0"`
 }
 
 // DisburseLoanRequest represents the request body for disbursing a loan

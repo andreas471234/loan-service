@@ -27,7 +27,10 @@ func float64Ptr(v float64) *float64 {
 func setupTestHandler() (*LoanHandler, *gin.Engine, *gorm.DB) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
+	// Register custom validations
+	dto.RegisterCustomValidations()
+
 	// Create test database
 	database, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -340,6 +343,107 @@ func TestApproveLoan(t *testing.T) {
 	assert.Equal(t, "Loan approved successfully", response.Message)
 }
 
+func TestApproveLoanInvalidImageLink(t *testing.T) {
+	handler, router, _ := setupTestHandler()
+
+	// Set up routes
+	router.POST("/loans", handler.CreateLoan)
+	router.PUT("/loans/:id/approve", handler.ApproveLoan)
+
+	// First create a loan
+	createReq := dto.CreateLoanRequest{
+		BorrowerID:          "user123",
+		PrincipalAmount:     25000.00,
+		Rate:                4.5,
+		ROI:                 6.0,
+	}
+
+	reqBody, _ := json.Marshal(createReq)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/loans", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	var createResponse dto.SuccessResponse
+	err := json.Unmarshal(w.Body.Bytes(), &createResponse)
+	require.NoError(t, err)
+
+	loanData := createResponse.Data.(map[string]interface{})
+	loanID := loanData["id"].(string)
+
+	// Try to approve with invalid image link (not an image URL)
+	approveReq := dto.ApproveLoanRequest{
+		FieldValidatorProof: "https://example.com/document.pdf", // Invalid: not an image
+		FieldValidatorID:    "validator_001",
+	}
+
+	reqBody2, _ := json.Marshal(approveReq)
+	w2 := httptest.NewRecorder()
+	req2, _ := http.NewRequest("PUT", "/loans/"+loanID+"/approve", bytes.NewBuffer(reqBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusBadRequest, w2.Code)
+
+	var errorResponse dto.ErrorResponse
+	err = json.Unmarshal(w2.Body.Bytes(), &errorResponse)
+	require.NoError(t, err)
+	assert.Contains(t, errorResponse.Message, "image_link")
+}
+
+func TestApproveLoanValidImageLink(t *testing.T) {
+	handler, router, _ := setupTestHandler()
+
+	// Set up routes
+	router.POST("/loans", handler.CreateLoan)
+	router.PUT("/loans/:id/approve", handler.ApproveLoan)
+
+	// First create a loan
+	createReq := dto.CreateLoanRequest{
+		BorrowerID:          "user123",
+		PrincipalAmount:     25000.00,
+		Rate:                4.5,
+		ROI:                 6.0,
+	}
+
+	reqBody, _ := json.Marshal(createReq)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/loans", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	var createResponse dto.SuccessResponse
+	err := json.Unmarshal(w.Body.Bytes(), &createResponse)
+	require.NoError(t, err)
+
+	loanData := createResponse.Data.(map[string]interface{})
+	loanID := loanData["id"].(string)
+
+	// Approve with valid image link
+	approveReq := dto.ApproveLoanRequest{
+		FieldValidatorProof: "https://example.com/proofs/field_visit_123.jpg", // Valid: image URL
+		FieldValidatorID:    "validator_001",
+	}
+
+	reqBody2, _ := json.Marshal(approveReq)
+	w2 := httptest.NewRecorder()
+	req2, _ := http.NewRequest("PUT", "/loans/"+loanID+"/approve", bytes.NewBuffer(reqBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusOK, w2.Code)
+
+	var response dto.SuccessResponse
+	err = json.Unmarshal(w2.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Equal(t, "Loan approved successfully", response.Message)
+
+	// Verify that approval date is automatically set
+	approvedLoan := response.Data.(map[string]interface{})
+	approvalDetails := approvedLoan["approval_details"].(map[string]interface{})
+	assert.NotEmpty(t, approvalDetails["approval_date"])
+}
+
 func TestInvestLoan(t *testing.T) {
 	handler, router, _ := setupTestHandler()
 	
@@ -383,9 +487,8 @@ func TestInvestLoan(t *testing.T) {
 	
 	// Invest in the loan
 	investReq := dto.InvestLoanRequest{
-		InvestorID:          "investor_001",
-		Amount:              10000.00,
-		AgreementLetterLink: "https://example.com/agreement.pdf",
+		InvestorID: "investor_001",
+		Amount:     10000.00,
 	}
 	
 	reqBody3, _ := json.Marshal(investReq)
@@ -446,9 +549,8 @@ func TestDisburseLoan(t *testing.T) {
 	
 	// Invest fully in the loan
 	investReq := dto.InvestLoanRequest{
-		InvestorID:          "investor_001",
-		Amount:              25000.00,
-		AgreementLetterLink: "https://example.com/agreement.pdf",
+		InvestorID: "investor_001",
+		Amount:     25000.00,
 	}
 	
 	reqBody3, _ := json.Marshal(investReq)

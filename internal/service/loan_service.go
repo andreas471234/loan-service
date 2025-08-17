@@ -2,11 +2,17 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"loan-service/internal/domain"
 	"loan-service/internal/repository"
 )
+
+// generateAgreementLetterLink creates a dummy agreement letter link
+func generateAgreementLetterLink(loanID string) string {
+	return fmt.Sprintf("https://example.com/agreements/loan_%s_agreement.pdf", loanID)
+}
 
 // LoanService defines the interface for loan business logic
 type LoanService interface {
@@ -16,7 +22,7 @@ type LoanService interface {
 	UpdateLoan(id string, updates map[string]interface{}) (*domain.Loan, error)
 	DeleteLoan(id string) error
 	ApproveLoan(id string, approvalDetails *domain.ApprovalDetails) (*domain.Loan, error)
-	InvestInLoan(id string, investorID string, amount float64, agreementLetterLink string) (*domain.Loan, error)
+	InvestInLoan(id string, investorID string, amount float64) (*domain.Loan, error)
 	DisburseLoan(id string, disbursementDetails *domain.DisbursementDetails) (*domain.Loan, error)
 	GetLoanTransitions(id string) ([]domain.StateTransition, error)
 }
@@ -125,7 +131,7 @@ func (s *loanService) ApproveLoan(id string, approvalDetails *domain.ApprovalDet
 }
 
 // InvestInLoan adds an investment to a loan
-func (s *loanService) InvestInLoan(id string, investorID string, amount float64, agreementLetterLink string) (*domain.Loan, error) {
+func (s *loanService) InvestInLoan(id string, investorID string, amount float64) (*domain.Loan, error) {
 	loan, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -135,9 +141,9 @@ func (s *loanService) InvestInLoan(id string, investorID string, amount float64,
 		return nil, err
 	}
 
-	// Set the agreement letter link when the loan becomes invested and link is provided
-	if loan.Status == domain.StatusInvested && agreementLetterLink != "" {
-		loan.AgreementLetterLink = agreementLetterLink
+	// Auto-generate the agreement letter link when the loan becomes invested
+	if loan.Status == domain.StatusInvested {
+		loan.AgreementLetterLink = generateAgreementLetterLink(loan.ID)
 	}
 
 	err = s.repo.Update(loan)
