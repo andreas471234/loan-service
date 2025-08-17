@@ -33,9 +33,19 @@ clean:
 	$(GOCLEAN)
 	@rm -rf $(BUILD_DIR)
 
-# Run tests
+# Run unit tests
+test-unit:
+	@echo "Running unit tests..."
+	$(GOTEST) -v ./internal/...
+
+# Run integration tests
+test-integration:
+	@echo "Running integration tests..."
+	$(GOTEST) -v ./tests/integration/...
+
+# Run all tests
 test:
-	@echo "Running tests..."
+	@echo "Running all tests..."
 	$(GOTEST) -v ./...
 
 # Run tests with coverage
@@ -109,7 +119,9 @@ help:
 	@echo "Available targets:"
 	@echo "  build       - Build the application"
 	@echo "  clean       - Clean build artifacts"
-	@echo "  test        - Run tests"
+	@echo "  test        - Run all tests"
+	@echo "  test-unit   - Run unit tests only"
+	@echo "  test-integration - Run integration tests only"
 	@echo "  coverage    - Run tests with coverage report"
 	@echo "  run         - Run the application"
 	@echo "  run-race    - Run with race detection"

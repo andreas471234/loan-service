@@ -16,7 +16,7 @@ type LoanService interface {
 	UpdateLoan(id string, updates map[string]interface{}) (*domain.Loan, error)
 	DeleteLoan(id string) error
 	ApproveLoan(id string, approvalDetails *domain.ApprovalDetails) (*domain.Loan, error)
-	InvestInLoan(id string, investorID string, amount float64) (*domain.Loan, error)
+	InvestInLoan(id string, investorID string, amount float64, agreementLetterLink string) (*domain.Loan, error)
 	DisburseLoan(id string, disbursementDetails *domain.DisbursementDetails) (*domain.Loan, error)
 	GetLoanTransitions(id string) ([]domain.StateTransition, error)
 }
@@ -125,7 +125,7 @@ func (s *loanService) ApproveLoan(id string, approvalDetails *domain.ApprovalDet
 }
 
 // InvestInLoan adds an investment to a loan
-func (s *loanService) InvestInLoan(id string, investorID string, amount float64) (*domain.Loan, error) {
+func (s *loanService) InvestInLoan(id string, investorID string, amount float64, agreementLetterLink string) (*domain.Loan, error) {
 	loan, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -133,6 +133,11 @@ func (s *loanService) InvestInLoan(id string, investorID string, amount float64)
 
 	if err := loan.AddInvestment(investorID, amount); err != nil {
 		return nil, err
+	}
+
+	// Set the agreement letter link when the loan becomes invested and link is provided
+	if loan.Status == domain.StatusInvested && agreementLetterLink != "" {
+		loan.AgreementLetterLink = agreementLetterLink
 	}
 
 	err = s.repo.Update(loan)

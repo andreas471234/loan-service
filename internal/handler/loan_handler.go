@@ -93,11 +93,10 @@ func (h *LoanHandler) CreateLoan(c *gin.Context) {
 	}
 
 	loan := &domain.Loan{
-		BorrowerID:          req.BorrowerID,
-		PrincipalAmount:     req.PrincipalAmount,
-		Rate:                req.Rate,
-		ROI:                 req.ROI,
-		AgreementLetterLink: req.AgreementLetterLink,
+		BorrowerID:      req.BorrowerID,
+		PrincipalAmount: req.PrincipalAmount,
+		Rate:            req.Rate,
+		ROI:             req.ROI,
 	}
 
 	if err := h.loanService.CreateLoan(loan); err != nil {
@@ -240,7 +239,7 @@ func (h *LoanHandler) InvestLoan(c *gin.Context) {
 		return
 	}
 
-	loan, err := h.loanService.InvestInLoan(id, req.InvestorID, req.Amount)
+	loan, err := h.loanService.InvestInLoan(id, req.InvestorID, req.Amount, req.AgreementLetterLink)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error:   "Investment error",
