@@ -40,8 +40,8 @@ func TestLoanCanInvest(t *testing.T) {
 
 func TestLoanCanDisburse(t *testing.T) {
 	loan := &Loan{
-		Status:        StatusInvested,
-		TotalInvested: 25000.00,
+		Status:          StatusInvested,
+		TotalInvested:   25000.00,
 		PrincipalAmount: 25000.00,
 	}
 	assert.True(t, loan.CanDisburse())
@@ -52,9 +52,9 @@ func TestLoanCanDisburse(t *testing.T) {
 
 func TestLoanAddInvestment(t *testing.T) {
 	loan := &Loan{
-		Status:        StatusApproved,
+		Status:          StatusApproved,
 		PrincipalAmount: 25000.00,
-		TotalInvested: 0.0,
+		TotalInvested:   0.0,
 	}
 
 	err := loan.AddInvestment("investor_001", 10000.00)
@@ -71,9 +71,9 @@ func TestLoanAddInvestment(t *testing.T) {
 
 func TestLoanAddInvestmentExceedsLimit(t *testing.T) {
 	loan := &Loan{
-		Status:        StatusApproved,
+		Status:          StatusApproved,
 		PrincipalAmount: 25000.00,
-		TotalInvested: 0.0,
+		TotalInvested:   0.0,
 	}
 
 	err := loan.AddInvestment("investor_001", 30000.00)
@@ -83,9 +83,9 @@ func TestLoanAddInvestmentExceedsLimit(t *testing.T) {
 
 func TestLoanAddInvestmentInvalidStatus(t *testing.T) {
 	loan := &Loan{
-		Status:        StatusProposed,
+		Status:          StatusProposed,
 		PrincipalAmount: 25000.00,
-		TotalInvested: 0.0,
+		TotalInvested:   0.0,
 	}
 
 	err := loan.AddInvestment("investor_001", 10000.00)

@@ -18,14 +18,14 @@ func TestFSMValidTransitions(t *testing.T) {
 
 	// Test valid transition
 	assert.True(t, fsm.CanTransition(StatusApproved))
-	
+
 	err := fsm.Transition(StatusApproved)
 	assert.NoError(t, err)
 	assert.Equal(t, StatusApproved, fsm.GetCurrentState())
 
 	// Test invalid transition
 	assert.False(t, fsm.CanTransition(StatusProposed))
-	
+
 	err = fsm.Transition(StatusProposed)
 	assert.Error(t, err)
 }
@@ -61,7 +61,7 @@ func TestFSMGetValidTransitions(t *testing.T) {
 
 func TestFSMCompleteLifecycle(t *testing.T) {
 	fsm := NewFSM()
-	
+
 	// Proposed -> Approved
 	assert.True(t, fsm.CanTransition(StatusApproved))
 	err := fsm.Transition(StatusApproved)

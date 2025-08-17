@@ -7,20 +7,24 @@ A comprehensive REST API service for managing the full lifecycle of loans, from 
 - **Loan Lifecycle Management**: Complete workflow from proposal to disbursement
 - **Finite State Machine (FSM)**: Robust state management with explicit transitions
 - **Forward-Only State Transitions**: Enforced business rules for loan status changes (no rollback)
-- **RESTful API**: Clean, intuitive API design
-- **Database Integration**: SQLite database with GORM ORM
-- **Validation**: Request validation and error handling
+- **RESTful API**: Clean, intuitive API design with comprehensive validation
+- **Database Integration**: SQLite database with GORM ORM (PostgreSQL support available)
+- **Validation**: Request validation with custom image link validation
 - **CORS Support**: Cross-origin resource sharing enabled
 - **Clean Architecture**: Well-structured codebase following Go best practices
+- **Auto-Generation**: Automatic agreement letter links and approval dates
+- **Comprehensive Testing**: Unit tests, integration tests, and end-to-end validation
 
 ## Tech Stack
 
 - **Go 1.21+**: Core programming language
 - **Gin**: HTTP web framework
 - **GORM**: Object-relational mapping
-- **SQLite**: Lightweight database
+- **SQLite**: Lightweight database (default)
+- **PostgreSQL**: Production-ready database (configurable)
 - **UUID**: Unique identifier generation
 - **FSM**: Finite State Machine for state management
+- **Validator**: Custom validation with go-playground/validator
 
 ## Project Structure
 
@@ -38,14 +42,18 @@ loan-service/
 │   ├── handler/           # HTTP request handlers
 │   ├── middleware/        # HTTP middleware
 │   ├── repository/        # Data access layer
-│   └── service/           # Business logic layer
-├── build/                 # Build artifacts (generated)
+│   ├── service/           # Business logic layer
+│   └── testutils/         # Test utilities
+├── tests/                 # Test files
+│   └── integration/       # Integration tests
 ├── docker-compose.yml     # Docker Compose configuration
 ├── Dockerfile             # Docker image definition
 ├── Makefile               # Build and development tasks
 ├── go.mod                 # Go module file
 ├── go.sum                 # Go module checksums
 ├── env.example            # Environment variables example
+├── test_api.sh            # API testing script
+├── E2E_TEST_CASES.md      # Integration test documentation
 └── README.md              # This file
 ```
 
@@ -59,23 +67,27 @@ loan-service/
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd loan-service
 ```
 
 2. Install dependencies:
+
 ```bash
 make deps
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp env.example .env
 # Edit .env file with your configuration
 ```
 
 4. Run the application:
+
 ```bash
 make run
 ```
@@ -88,8 +100,14 @@ The API will be available at `http://localhost:8080`
 # Build the application
 make build
 
-# Run tests
+# Run all tests
 make test
+
+# Run unit tests only
+make test-unit
+
+# Run integration tests only
+make test-integration
 
 # Run tests with coverage
 make coverage
@@ -122,35 +140,41 @@ make help
 ## API Endpoints
 
 ### Health Check
+
 - `GET /health` - Service health status
 
 ### Loan Management
 
 #### Get All Loans
+
 - `GET /api/v1/loans` - Retrieve all loans
 - Query Parameters:
   - `status` (optional): Filter by loan status
   - `borrower_id` (optional): Filter by borrower ID
 
 #### Get Single Loan
+
 - `GET /api/v1/loans/{id}` - Retrieve a specific loan by ID
 
 #### Create Loan
+
 - `POST /api/v1/loans` - Create a new loan
 - Request Body:
+
 ```json
 {
   "borrower_id": "string",
   "principal_amount": 10000.00,
   "rate": 5.5,
-  "roi": 7.0,
-  "agreement_letter_link": "https://example.com/agreement.pdf"
+  "roi": 7.0
 }
 ```
 
 #### Update Loan
+
 - `PUT /api/v1/loans/{id}` - Update an existing loan (only in proposed status)
 - Request Body (all fields optional):
+
 ```json
 {
   "principal_amount": 15000.00,
@@ -161,13 +185,16 @@ make help
 ```
 
 #### Delete Loan
+
 - `DELETE /api/v1/loans/{id}` - Delete a loan (only in proposed status)
 
 ### Loan State Transitions (FSM)
 
 #### Get Valid Transitions
+
 - `GET /api/v1/loans/{id}/transitions` - Get valid state transitions for a loan
 - Response:
+
 ```json
 {
   "message": "Valid transitions retrieved successfully",
@@ -185,8 +212,10 @@ make help
 ```
 
 #### Approve Loan
+
 - `PUT /api/v1/loans/{id}/approve` - Approve a proposed loan
 - Request Body:
+
 ```json
 {
   "field_validator_proof": "https://example.com/proof.jpg",
@@ -194,9 +223,13 @@ make help
 }
 ```
 
+**Note**: `field_validator_proof` must be a valid image link (supports .jpg, .jpeg, .png, .gif, .bmp, .webp, .svg)
+
 #### Invest in Loan
+
 - `PUT /api/v1/loans/{id}/invest` - Add investment to an approved loan
 - Request Body:
+
 ```json
 {
   "investor_id": "investor123",
@@ -204,9 +237,13 @@ make help
 }
 ```
 
+**Note**: Agreement letter link is automatically generated when loan becomes fully invested
+
 #### Disburse Loan
+
 - `PUT /api/v1/loans/{id}/disburse` - Disburse a fully invested loan
 - Request Body:
+
 ```json
 {
   "signed_agreement_link": "https://example.com/signed-agreement.pdf",
@@ -237,6 +274,8 @@ The Finite State Machine enforces the following transitions:
 - Only loans in **Approved** status can be invested
 - Only loans in **Invested** status can be disbursed
 - Loans automatically transition to **Invested** when fully funded
+- Agreement letter links are auto-generated when loans become fully invested
+- Approval dates are automatically recorded when loans are approved
 
 ## Architecture
 
@@ -247,10 +286,14 @@ The application follows Clean Architecture principles:
 - **Service Layer** (`internal/service/`): Business logic orchestration
 - **Handler Layer** (`internal/handler/`): HTTP request handling
 - **DTO Layer** (`internal/dto/`): Data transfer objects for API contracts
+- **Middleware Layer** (`internal/middleware/`): HTTP middleware (CORS, logging, recovery)
+- **Config Layer** (`internal/config/`): Configuration management
+- **Database Layer** (`internal/database/`): Database connection and setup
 
 ## Response Format
 
 ### Success Response
+
 ```json
 {
   "message": "Operation completed successfully",
@@ -261,6 +304,7 @@ The application follows Clean Architecture principles:
 ```
 
 ### Error Response
+
 ```json
 {
   "error": "Error type",
@@ -282,47 +326,72 @@ SERVER_READ_TIMEOUT=10
 SERVER_WRITE_TIMEOUT=10
 SERVER_IDLE_TIMEOUT=120
 
-# Database Configuration
+# Database Configuration (SQLite - Default)
 DB_DRIVER=sqlite
 DB_NAME=loan_service.db
+
+# Database Configuration (PostgreSQL - Optional)
+# DB_DRIVER=postgres
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_USER=postgres
+# DB_PASSWORD=password
+# DB_NAME=loan_service
+# DB_SSLMODE=disable
 ```
 
 ## Database
 
-The application uses SQLite as the database. The database file will be created automatically when you first run the application.
+The application uses SQLite as the default database. The database file will be created automatically when you first run the application. PostgreSQL is also supported and can be configured by updating the environment variables.
 
 ## Testing
 
-### Run Tests
+### Run All Tests
+
 ```bash
 make test
 ```
 
+### Run Unit Tests Only
+
+```bash
+make test-unit
+```
+
+### Run Integration Tests Only
+
+```bash
+make test-integration
+```
+
 ### Run Tests with Coverage
+
 ```bash
 make coverage
 ```
 
-### Functional Tests
-```bash
-go test -v ./functional_test.go ./test_utils.go
-```
+### API Testing
 
-### API Tests
 ```bash
 chmod +x test_api.sh
 ./test_api.sh
 ```
 
+### Test Documentation
+
+See `E2E_TEST_CASES.md` for comprehensive integration test documentation.
+
 ## Docker
 
 ### Build and Run with Docker
+
 ```bash
 make docker-build
 make docker-run
 ```
 
 ### Using Docker Compose
+
 ```bash
 make docker-up
 make docker-down
@@ -331,6 +400,7 @@ make docker-down
 ## Example Usage
 
 ### Create a Loan
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/loans \
   -H "Content-Type: application/json" \
@@ -338,22 +408,24 @@ curl -X POST http://localhost:8080/api/v1/loans \
     "borrower_id": "user123",
     "principal_amount": 25000.00,
     "rate": 4.5,
-    "roi": 6.0,
-    "agreement_letter_link": "https://example.com/agreement/user123.pdf"
+    "roi": 6.0
   }'
 ```
 
 ### Get Valid Transitions
+
 ```bash
 curl http://localhost:8080/api/v1/loans/{loan-id}/transitions
 ```
 
 ### Get All Loans
+
 ```bash
 curl http://localhost:8080/api/v1/loans
 ```
 
 ### Approve a Loan
+
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
   -H "Content-Type: application/json" \
@@ -362,6 +434,46 @@ curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
     "field_validator_id": "validator123"
   }'
 ```
+
+### Invest in a Loan
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/invest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "investor_id": "investor123",
+    "amount": 25000.00
+  }'
+```
+
+### Disburse a Loan
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/disburse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "signed_agreement_link": "https://example.com/signed-agreement.pdf",
+    "field_officer_id": "officer123"
+  }'
+```
+
+## Recent Enhancements
+
+### Auto-Generation Features
+- **Agreement Letter Links**: Automatically generated when loans become fully invested
+- **Approval Dates**: Automatically recorded when loans are approved
+- **Disbursement Dates**: Automatically tracked when loans are disbursed
+
+### Enhanced Validation
+- **Image Link Validation**: Custom validation for field validator proof images
+- **Comprehensive Input Validation**: All required fields and data formats
+- **Business Rule Enforcement**: Strict state transition and investment limit validation
+
+### Improved Test Structure
+- **Logical Test Organization**: Clear separation of concerns
+- **Comprehensive Coverage**: All aspects of the loan lifecycle
+- **Clear Test Documentation**: Descriptive test names and logging
+- **Robust Error Handling**: Proper validation of error scenarios
 
 ## License
 

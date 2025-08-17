@@ -15,11 +15,11 @@ func TestNewConnection(t *testing.T) {
 		Driver: "sqlite",
 		Name:   ":memory:",
 	}
-	
+
 	db, err := NewConnection(cfg)
 	require.NoError(t, err)
 	assert.NotNil(t, db)
-	
+
 	// Test unsupported driver
 	cfg.Driver = "unsupported"
 	_, err = NewConnection(cfg)
@@ -30,16 +30,16 @@ func TestNewConnection(t *testing.T) {
 func TestCloseConnection(t *testing.T) {
 	// Test with nil database (should not panic)
 	CloseConnection(nil)
-	
+
 	// Test with valid database
 	cfg := config.DatabaseConfig{
 		Driver: "sqlite",
 		Name:   ":memory:",
 	}
-	
+
 	db, err := NewConnection(cfg)
 	require.NoError(t, err)
-	
+
 	CloseConnection(db)
 }
 

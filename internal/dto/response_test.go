@@ -22,9 +22,9 @@ func TestToLoanResponse(t *testing.T) {
 		CreatedAt:           time.Now(),
 		UpdatedAt:           time.Now(),
 	}
-	
+
 	response := ToLoanResponse(loan)
-	
+
 	assert.Equal(t, loan.ID, response.ID)
 	assert.Equal(t, loan.BorrowerID, response.BorrowerID)
 	assert.Equal(t, loan.PrincipalAmount, response.PrincipalAmount)
