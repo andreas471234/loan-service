@@ -11,6 +11,7 @@ A comprehensive REST API service for managing the full lifecycle of loans, from 
 - **Database Integration**: SQLite database with GORM ORM
 - **Validation**: Request validation and error handling
 - **CORS Support**: Cross-origin resource sharing enabled
+- **Clean Architecture**: Well-structured codebase following Go best practices
 
 ## Tech Stack
 
@@ -20,6 +21,33 @@ A comprehensive REST API service for managing the full lifecycle of loans, from 
 - **SQLite**: Lightweight database
 - **UUID**: Unique identifier generation
 - **FSM**: Finite State Machine for state management
+
+## Project Structure
+
+```
+loan-service/
+├── api/                    # API versioning
+│   └── v1/                # API v1 routes
+├── cmd/                    # Application entry points
+│   └── server/            # Main server application
+├── internal/               # Private application code
+│   ├── config/            # Configuration management
+│   ├── database/          # Database connection and setup
+│   ├── domain/            # Business logic and models
+│   ├── dto/               # Data Transfer Objects
+│   ├── handler/           # HTTP request handlers
+│   ├── middleware/        # HTTP middleware
+│   ├── repository/        # Data access layer
+│   └── service/           # Business logic layer
+├── build/                 # Build artifacts (generated)
+├── docker-compose.yml     # Docker Compose configuration
+├── Dockerfile             # Docker image definition
+├── Makefile               # Build and development tasks
+├── go.mod                 # Go module file
+├── go.sum                 # Go module checksums
+├── env.example            # Environment variables example
+└── README.md              # This file
+```
 
 ## Quick Start
 
@@ -38,15 +66,58 @@ cd loan-service
 
 2. Install dependencies:
 ```bash
-go mod tidy
+make deps
 ```
 
-3. Run the application:
+3. Set up environment variables:
 ```bash
-go run .
+cp env.example .env
+# Edit .env file with your configuration
+```
+
+4. Run the application:
+```bash
+make run
 ```
 
 The API will be available at `http://localhost:8080`
+
+## Development Commands
+
+```bash
+# Build the application
+make build
+
+# Run tests
+make test
+
+# Run tests with coverage
+make coverage
+
+# Format code
+make fmt
+
+# Run linter
+make lint
+
+# Run all checks (format, lint, test)
+make check
+
+# Clean build artifacts
+make clean
+
+# Run with race detection
+make run-race
+
+# Docker commands
+make docker-build
+make docker-run
+make docker-up
+make docker-down
+
+# Show all available commands
+make help
+```
 
 ## API Endpoints
 
@@ -115,12 +186,33 @@ The API will be available at `http://localhost:8080`
 
 #### Approve Loan
 - `PUT /api/v1/loans/{id}/approve` - Approve a proposed loan
+- Request Body:
+```json
+{
+  "field_validator_proof": "https://example.com/proof.jpg",
+  "field_validator_id": "validator123"
+}
+```
 
 #### Invest in Loan
-- `PUT /api/v1/loans/{id}/invest` - Mark an approved loan as invested
+- `PUT /api/v1/loans/{id}/invest` - Add investment to an approved loan
+- Request Body:
+```json
+{
+  "investor_id": "investor123",
+  "amount": 5000.00
+}
+```
 
 #### Disburse Loan
-- `PUT /api/v1/loans/{id}/disburse` - Disburse an invested loan
+- `PUT /api/v1/loans/{id}/disburse` - Disburse a fully invested loan
+- Request Body:
+```json
+{
+  "signed_agreement_link": "https://example.com/signed-agreement.pdf",
+  "field_officer_id": "officer123"
+}
+```
 
 ## Loan States
 
@@ -144,43 +236,17 @@ The Finite State Machine enforces the following transitions:
 - Only loans in **Proposed** status can be approved
 - Only loans in **Approved** status can be invested
 - Only loans in **Invested** status can be disbursed
+- Loans automatically transition to **Invested** when fully funded
 
-## Loan Model Fields
+## Architecture
 
-The loan model contains only the essential information:
+The application follows Clean Architecture principles:
 
-- **borrower_id**: Unique identifier for the borrower
-- **principal_amount**: The loan amount requested
-- **rate**: Interest rate that the borrower will pay
-- **roi**: Return on investment for investors
-- **agreement_letter_link**: Link to the generated agreement letter
-- **status**: Current state of the loan
-- **created_at**: Timestamp when loan was created
-- **updated_at**: Timestamp when loan was last updated
-
-## FSM Implementation
-
-The service uses a Finite State Machine to manage loan states:
-
-```go
-type FSM struct {
-    CurrentState LoanStatus
-    Transitions  []StateTransition
-}
-
-type StateTransition struct {
-    From   LoanStatus
-    To     LoanStatus
-    Action string
-}
-```
-
-### FSM Methods
-
-- `CanTransition(to LoanStatus) bool` - Check if transition is valid
-- `Transition(to LoanStatus) error` - Perform state transition
-- `GetCurrentState() LoanStatus` - Get current state
-- `GetValidTransitions() []StateTransition` - Get valid transitions from current state
+- **Domain Layer** (`internal/domain/`): Business entities and logic
+- **Repository Layer** (`internal/repository/`): Data access abstraction
+- **Service Layer** (`internal/service/`): Business logic orchestration
+- **Handler Layer** (`internal/handler/`): HTTP request handling
+- **DTO Layer** (`internal/dto/`): Data transfer objects for API contracts
 
 ## Response Format
 
@@ -204,38 +270,62 @@ type StateTransition struct {
 
 ## Environment Variables
 
-Create a `.env` file in the root directory:
+Copy `env.example` to `.env` and configure:
 
 ```env
+# Environment
+ENVIRONMENT=development
+
+# Server Configuration
 PORT=8080
-GIN_MODE=debug
+SERVER_READ_TIMEOUT=10
+SERVER_WRITE_TIMEOUT=10
+SERVER_IDLE_TIMEOUT=120
+
+# Database Configuration
+DB_DRIVER=sqlite
+DB_NAME=loan_service.db
 ```
 
 ## Database
 
-The application uses SQLite as the database. The database file (`loan_service.db`) will be created automatically when you first run the application.
+The application uses SQLite as the database. The database file will be created automatically when you first run the application.
 
-## Development
+## Testing
 
-### Project Structure
-```
-loan-service/
-├── main.go          # Application entry point
-├── models.go        # Data models, FSM types and interfaces
-├── handlers.go      # HTTP request handlers with FSM logic
-├── go.mod           # Go module file
-├── go.sum           # Go module checksums
-└── README.md        # This file
-```
-
-### Running Tests
+### Run Tests
 ```bash
-go test ./...
+make test
 ```
 
-### Building
+### Run Tests with Coverage
 ```bash
-go build -o loan-service .
+make coverage
+```
+
+### Functional Tests
+```bash
+go test -v ./functional_test.go ./test_utils.go
+```
+
+### API Tests
+```bash
+chmod +x test_api.sh
+./test_api.sh
+```
+
+## Docker
+
+### Build and Run with Docker
+```bash
+make docker-build
+make docker-run
+```
+
+### Using Docker Compose
+```bash
+make docker-up
+make docker-down
 ```
 
 ## Example Usage
@@ -265,13 +355,12 @@ curl http://localhost:8080/api/v1/loans
 
 ### Approve a Loan
 ```bash
-curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve
-```
-
-### Test the API with FSM
-```bash
-chmod +x test_api.sh
-./test_api.sh
+curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "field_validator_proof": "https://example.com/proof.jpg",
+    "field_validator_id": "validator123"
+  }'
 ```
 
 ## License

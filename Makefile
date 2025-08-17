@@ -1,46 +1,126 @@
-.PHONY: build run test clean deps lint help
+# Makefile for Loan Service
+
+# Variables
+BINARY_NAME=loan-service
+BUILD_DIR=build
+MAIN_PATH=cmd/server/main.go
+
+# Go parameters
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+GOGET=$(GOCMD) get
+GOMOD=$(GOCMD) mod
+
+# Build flags
+LDFLAGS=-ldflags "-X main.Version=$(shell git describe --tags --always --dirty)"
+
+.PHONY: all build clean test coverage run docker-build docker-run help
 
 # Default target
-help:
-	@echo "Available commands:"
-	@echo "  build    - Build the application"
-	@echo "  run      - Run the application"
-	@echo "  test     - Run tests"
-	@echo "  clean    - Clean build artifacts"
-	@echo "  deps     - Install dependencies"
-	@echo "  lint     - Run linter"
-	@echo "  api-test - Run API tests"
+all: clean build
 
 # Build the application
 build:
-	go build -o loan-service .
-
-# Run the application
-run:
-	go run .
-
-# Run tests
-test:
-	go test -v ./...
+	@echo "Building $(BINARY_NAME)..."
+	@mkdir -p $(BUILD_DIR)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 
 # Clean build artifacts
 clean:
-	rm -f loan-service
-	rm -f loan_service.db
+	@echo "Cleaning..."
+	$(GOCLEAN)
+	@rm -rf $(BUILD_DIR)
+
+# Run tests
+test:
+	@echo "Running tests..."
+	$(GOTEST) -v ./...
+
+# Run tests with coverage
+coverage:
+	@echo "Running tests with coverage..."
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Run the application
+run:
+	@echo "Running $(BINARY_NAME)..."
+	$(GOCMD) run $(MAIN_PATH)
+
+# Run the application with race detection
+run-race:
+	@echo "Running $(BINARY_NAME) with race detection..."
+	$(GOCMD) run -race $(MAIN_PATH)
 
 # Install dependencies
 deps:
-	go mod tidy
-	go mod download
+	@echo "Installing dependencies..."
+	$(GOMOD) download
+	$(GOMOD) tidy
+
+# Format code
+fmt:
+	@echo "Formatting code..."
+	$(GOCMD) fmt ./...
 
 # Run linter
 lint:
-	golangci-lint run
+	@echo "Running linter..."
+	$(GOCMD) vet ./...
 
-# Run API tests
-api-test:
-	./test_api.sh
+# Run all checks (format, lint, test)
+check: fmt lint test
 
-# Install development tools
-install-tools:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest 
+# Docker build
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t $(BINARY_NAME) .
+
+# Docker run
+docker-run:
+	@echo "Running Docker container..."
+	docker run -p 8080:8080 $(BINARY_NAME)
+
+# Docker compose up
+docker-up:
+	@echo "Starting services with Docker Compose..."
+	docker-compose up -d
+
+# Docker compose down
+docker-down:
+	@echo "Stopping services with Docker Compose..."
+	docker-compose down
+
+# Generate API documentation (if using swagger)
+docs:
+	@echo "Generating API documentation..."
+	# Add swagger generation commands here if needed
+
+# Database migration
+migrate:
+	@echo "Running database migrations..."
+	$(GOCMD) run $(MAIN_PATH) migrate
+
+# Show help
+help:
+	@echo "Available targets:"
+	@echo "  build       - Build the application"
+	@echo "  clean       - Clean build artifacts"
+	@echo "  test        - Run tests"
+	@echo "  coverage    - Run tests with coverage report"
+	@echo "  run         - Run the application"
+	@echo "  run-race    - Run with race detection"
+	@echo "  deps        - Install dependencies"
+	@echo "  fmt         - Format code"
+	@echo "  lint        - Run linter"
+	@echo "  check       - Run format, lint, and test"
+	@echo "  docker-build- Build Docker image"
+	@echo "  docker-run  - Run Docker container"
+	@echo "  docker-up   - Start with Docker Compose"
+	@echo "  docker-down - Stop Docker Compose services"
+	@echo "  docs        - Generate API documentation"
+	@echo "  migrate     - Run database migrations"
+	@echo "  help        - Show this help message"
