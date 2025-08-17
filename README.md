@@ -5,6 +5,7 @@ A modern REST API service for managing the complete lifecycle of loans, from ini
 ## Quick Start
 
 ### Prerequisites
+
 - Go 1.21 or higher
 - Git
 - Docker (optional)
@@ -12,6 +13,7 @@ A modern REST API service for managing the complete lifecycle of loans, from ini
 ### Installation & Setup
 
 1. **Clone and setup**
+
 ```bash
 git clone https://github.com/andreas471234/loan-service.git
 cd loan-service
@@ -20,6 +22,7 @@ cp env.example .env
 ```
 
 2. **Run the application**
+
 ```bash
 make run
 ```
@@ -63,7 +66,7 @@ For complete API documentation, see [docs/README.md](docs/README.md#api-document
 
 ## Project Structure
 
-```
+```text
 loan-service/
 ├── api/v1/              # API routes and handlers
 ├── cmd/server/          # Application entry point
@@ -97,6 +100,7 @@ loan-service/
 ## Quick Examples
 
 ### Create a Loan
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/loans \
   -H "Content-Type: application/json" \
@@ -109,6 +113,7 @@ curl -X POST http://localhost:8080/api/v1/loans \
 ```
 
 ### Approve a Loan
+
 ```bash
 curl -X PUT http://localhost:8080/api/v1/loans/{loan-id}/approve \
   -H "Content-Type: application/json" \

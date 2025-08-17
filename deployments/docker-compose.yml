@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   loan-service:
-    build: .
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
     ports:
       - "8080:8080"
     environment:

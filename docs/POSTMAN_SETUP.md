@@ -6,7 +6,6 @@ This guide explains how to set up and use the Postman collection for the Loan Se
 
 1. **`loan-service-api.postman_collection.json`** - Complete API collection with all endpoints
 2. **`loan-service-api.postman_environment.json`** - Environment variables for different configurations
-3. **`POSTMAN_SETUP.md`** - This setup guide
 
 ## Quick Setup
 
@@ -41,10 +40,13 @@ docker run -p 8080:8080 loan-service
 ## Collection Structure
 
 ### 1. Health Check
+
 - **GET /health** - Verify service is running
 
 ### 2. Loan Management
+
 Basic CRUD operations for loan management:
+
 - **GET /api/v1/loans/** - Get all loans
 - **GET /api/v1/loans/{id}** - Get specific loan
 - **POST /api/v1/loans/** - Create new loan
@@ -52,14 +54,18 @@ Basic CRUD operations for loan management:
 - **DELETE /api/v1/loans/{id}** - Delete loan
 
 ### 3. Loan State Transitions
+
 Business operations for loan lifecycle:
+
 - **PUT /api/v1/loans/{id}/approve** - Approve loan
 - **PUT /api/v1/loans/{id}/invest** - Invest in loan
 - **PUT /api/v1/loans/{id}/disburse** - Disburse loan
 - **GET /api/v1/loans/{id}/transitions** - Get available transitions
 
 ### 4. Complete Loan Lifecycle
+
 Step-by-step workflow demonstration:
+
 1. Create Loan
 2. Approve Loan
 3. Invest in Loan (First Investment)
@@ -68,7 +74,9 @@ Step-by-step workflow demonstration:
 6. Verify Final State
 
 ### 5. Validation Examples
+
 Examples of validation errors and business rule violations:
+
 - Missing required fields
 - Invalid amounts
 - Invalid image links
@@ -119,6 +127,7 @@ The environment includes these variables:
 ### Testing Validation
 
 Use the "Validation Examples" folder to test:
+
 - Input validation
 - Business rule enforcement
 - Error handling
@@ -126,15 +135,18 @@ Use the "Validation Examples" folder to test:
 ## API Features Demonstrated
 
 ### Auto-Generation Features
+
 - **Agreement Letter Links**: Automatically generated when loans are fully invested
 - **Approval Dates**: Automatically recorded when loans are approved
 
 ### Validation Features
+
 - **Image Link Validation**: Ensures `field_validator_proof` contains valid image URLs
 - **Business Rules**: Enforces investment limits and state transitions
 - **Required Fields**: Validates all required parameters
 
 ### State Management
+
 - **Finite State Machine**: Proper loan state transitions
 - **Business Logic**: Enforces rules like "cannot invest in proposed loans"
 
@@ -162,17 +174,20 @@ Use the "Validation Examples" folder to test:
 To create additional environments:
 
 1. **Development Environment**
-   ```
+
+   ```env
    base_url: http://localhost:8080
    ```
 
 2. **Docker Environment**
-   ```
+
+   ```env
    base_url: http://localhost:8080
    ```
 
 3. **Production Environment**
-   ```
+
+   ```env
    base_url: https://your-production-domain.com
    ```
 
@@ -194,6 +209,7 @@ You can use environment variables in request bodies:
 ### Automated Testing
 
 The collection includes test scripts that:
+
 - Automatically set the `loan_id` variable after creating a loan
 - Log important information to the console
 - Can be extended for automated testing workflows
@@ -201,6 +217,7 @@ The collection includes test scripts that:
 ### Collection Runner
 
 Use Postman's Collection Runner to:
+
 - Run all requests in sequence
 - Test complete workflows
 - Generate test reports
@@ -209,6 +226,7 @@ Use Postman's Collection Runner to:
 ## Support
 
 For issues with the API:
+
 1. Check the service logs
 2. Verify the database connection
 3. Review the API documentation in the README.md

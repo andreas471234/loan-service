@@ -12,6 +12,7 @@ This directory contains comprehensive documentation for the Loan Service API pro
 ## API Documentation
 
 ### Core Features
+
 - **Complete Loan Lifecycle Management** - From proposal to disbursement
 - **Finite State Machine (FSM)** - Robust state management with forward-only transitions
 - **Multi-Investor Support** - Multiple investors can contribute to a single loan
@@ -21,6 +22,7 @@ This directory contains comprehensive documentation for the Loan Service API pro
 ### API Endpoints
 
 #### Core Loan Operations
+
 - `GET /api/v1/loans` - Get all loans
 - `GET /api/v1/loans/{id}` - Get specific loan
 - `POST /api/v1/loans` - Create new loan
@@ -28,23 +30,27 @@ This directory contains comprehensive documentation for the Loan Service API pro
 - `DELETE /api/v1/loans/{id}` - Delete loan (proposed status only)
 
 #### Loan State Transitions
+
 - `GET /api/v1/loans/{id}/transitions` - Get valid state transitions
 - `PUT /api/v1/loans/{id}/approve` - Approve loan
 - `PUT /api/v1/loans/{id}/invest` - Invest in loan
 - `PUT /api/v1/loans/{id}/disburse` - Disburse loan
 
 #### Health Check
+
 - `GET /health` - Service health status
 
 ### Loan Workflow
 
 #### State Progression
+
 1. **Proposed** → Initial state when loan is created
 2. **Approved** → Loan has been approved for funding
 3. **Invested** → Funds have been invested in the loan
 4. **Disbursed** → Loan amount has been disbursed to borrower
 
 #### Business Rules
+
 - Loans can only move forward in the lifecycle (no rollback)
 - Only loans in **Proposed** status can be updated or deleted
 - Only loans in **Approved** status can be invested
@@ -55,6 +61,7 @@ This directory contains comprehensive documentation for the Loan Service API pro
 ## Testing Guide
 
 ### Running Tests
+
 ```bash
 make test              # Run all tests
 make test-unit         # Run unit tests only
@@ -63,10 +70,12 @@ make coverage          # Generate coverage report
 ```
 
 ### Test Documentation
+
 - **[E2E_TEST_CASES.md](E2E_TEST_CASES.md)** - Comprehensive integration test scenarios
 - **Coverage Reports** - Generated in `tools/coverage.html`
 
 ### Test Categories
+
 1. **Unit Tests** - Individual component testing
 2. **Integration Tests** - End-to-end API validation
 3. **E2E Tests** - Complete workflow scenarios
@@ -74,11 +83,13 @@ make coverage          # Generate coverage report
 ## Development Setup
 
 ### Prerequisites
+
 - Go 1.21 or higher
 - Git
 - Docker (optional)
 
 ### Quick Start
+
 ```bash
 git clone <repository-url>
 cd loan-service
@@ -88,6 +99,7 @@ make run
 ```
 
 ### Development Commands
+
 ```bash
 make run              # Run the application
 make fmt              # Format code
@@ -97,6 +109,7 @@ make help             # Show all available commands
 ```
 
 ### Environment Configuration
+
 ```env
 ENVIRONMENT=development
 PORT=8080
@@ -107,6 +120,7 @@ DB_NAME=loan_service.db
 ## Deployment Guide
 
 ### Docker Deployment
+
 ```bash
 make docker-build      # Build Docker image
 make docker-run        # Run Docker container
@@ -114,6 +128,7 @@ make docker-up         # Start with Docker Compose
 ```
 
 ### Manual Docker Commands
+
 ```bash
 docker build -t loan-service -f deployments/Dockerfile .
 docker run -p 8080:8080 loan-service
@@ -123,11 +138,14 @@ docker-compose -f deployments/docker-compose.yml up -d
 ## API Testing
 
 ### Postman Collection
+
 Ready-to-use Postman collection available in `assets/postman/`:
+
 - `loan-service-api.postman_collection.json` - Complete API collection
 - `loan-service-api.postman_environment.json` - Environment variables
 
 ### Setup Instructions
+
 1. Import both files into Postman
 2. Select "Loan Service API Environment"
 3. Set base URL to `http://localhost:8080`
@@ -137,7 +155,7 @@ For detailed Postman setup, see **[POSTMAN_SETUP.md](POSTMAN_SETUP.md)**.
 
 ## Project Structure
 
-```
+```text
 loan-service/
 ├── api/v1/              # API routes and handlers
 ├── cmd/server/          # Application entry point
